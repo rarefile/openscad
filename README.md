@@ -4,6 +4,67 @@
 
 [![Visit our IRC channel](https://kiwiirc.com/buttons/irc.libera.chat/openscad.png)](https://kiwiirc.com/client/irc.libera.chat/#openscad)
 
+# About this fork
+
+This is [rarefile](https://github.com/rarefile)'s fork of
+[OpenSCAD](https://github.com/openscad/openscad). The `rarefile-edition` branch
+is official OpenSCAD plus the extras below. The `master` branch is kept
+identical to the official project.
+
+## Dark theme
+
+![OpenSCAD with the dark theme](doc/fork/dark-theme.png)
+
+A **Theme** setting that can force a light or dark user interface,
+whatever the operating system is set to:
+
+| Choice                    | Result                                                    |
+| ------------------------- | --------------------------------------------------------- |
+| Follow system (default)   | Same as official OpenSCAD                                 |
+| Light                     | Light menus, toolbars, panels and dialogs                 |
+| Dark                      | Dark menus, toolbars, panels and dialogs                  |
+
+Choosing Light or Dark also switches the editor and 3D view color schemes to
+matching ones, but only while they are still on their defaults. Color schemes
+you picked yourself are kept.
+
+**To use it:** Edit → Preferences → Advanced → User Interface → **Theme**.
+
+**Status:** this was proposed to the OpenSCAD project in a pull request and
+declined. The maintainers prefer that OpenSCAD follows the operating system's
+light/dark setting, which current official builds already do, and are
+discussing user-supplied style sheets instead in
+[openscad/openscad#7148](https://github.com/openscad/openscad/issues/7148).
+Use this fork if you want to force a theme regardless of your system setting.
+
+## Building this fork on Windows
+
+The steps below use [MSYS2](https://www.msys2.org/) and need roughly 10 GB of
+disk space. The first build can take an hour; later builds only recompile what
+changed.
+
+1. Install MSYS2 and open the **MSYS2 UCRT64** shell.
+2. Get the source:
+
+       git clone --recurse-submodules -b rarefile-edition https://github.com/rarefile/openscad.git
+       cd openscad
+
+3. Install the build dependencies:
+
+       ./scripts/msys2-install-dependencies.sh qt6
+
+4. Build:
+
+       mkdir build && cd build
+       cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_QT6=ON
+       cmake --build .
+
+5. Run `build/openscad.exe` with `C:\msys64\ucrt64\bin` on your `PATH`, for
+   example from the UCRT64 shell.
+
+For other platforms, see [Building OpenSCAD](#building-openscad) below; the
+steps are the same as for official OpenSCAD.
+
 # What is OpenSCAD?
 <p><a href="https://opencollective.com/openscad/donate"><img align="right" src="https://opencollective.com/openscad/donate/button@2x.png?color=white" width="200"/></a>
 
@@ -32,6 +93,7 @@ STL and OFF file formats.
 
 # Contents
 
+- [About this fork](#about-this-fork)
 - [Getting Started](#getting-started)
 - [Documentation](#documentation)
     - [Building OpenSCAD](#building-openscad)
