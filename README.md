@@ -13,7 +13,7 @@ identical to the official project.
 
 ## Dark theme
 
-![OpenSCAD with the dark theme](doc/fork/dark-theme.png)
+<img width="3840" height="2115" alt="openscad_10_31_2026%_494" src="https://github.com/user-attachments/assets/1126694d-96ee-4cf7-b883-ba914e5718d5" />
 
 A **Theme** setting that can force a light or dark user interface,
 whatever the operating system is set to:
