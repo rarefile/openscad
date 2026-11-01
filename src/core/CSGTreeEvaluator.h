@@ -4,6 +4,8 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "core/BaseVisitable.h"
@@ -38,6 +40,13 @@ public:
 
   std::shared_ptr<CSGNode> buildCSGTree(const AbstractNode& node);
 
+  // Highlight these nodes as if they had the # modifier, without changing the
+  // source. Used to show which parts of the model a value edit changed.
+  void setHighlightIndices(std::unordered_set<int> indices)
+  {
+    this->highlightIndices = std::move(indices);
+  }
+
   [[nodiscard]] const std::shared_ptr<CSGNode>& getRootNode() const { return this->rootNode; }
   [[nodiscard]] const std::vector<std::shared_ptr<CSGNode>>& getHighlightNodes() const
   {
@@ -56,6 +65,10 @@ private:
                                                        const ModuleInstantiation *modinst,
                                                        const AbstractNode& node);
   void applyBackgroundAndHighlight(State& state, const AbstractNode& node);
+  [[nodiscard]] bool isHighlighted(const AbstractNode& node) const
+  {
+    return node.modinst->isHighlight() || this->highlightIndices.count(node.index());
+  }
 
   using ChildList = std::list<std::shared_ptr<const AbstractNode>>;
   std::map<int, ChildList> visitedchildren;
@@ -67,4 +80,5 @@ protected:
   std::vector<std::shared_ptr<CSGNode>> highlightNodes;
   std::vector<std::shared_ptr<CSGNode>> backgroundNodes;
   std::map<int, std::shared_ptr<CSGNode>> stored_term;  // The term evaluated from each node index
+  std::unordered_set<int> highlightIndices;
 };

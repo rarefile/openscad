@@ -219,6 +219,8 @@ QElapsedTimer *MainWindow::progressThrottle = new QElapsedTimer();
 namespace {
 
 const int autoReloadPollingPeriodMS = 200;
+// How long the parts changed by a value edit stay highlighted after the last edit.
+const int changeHighlightDurationMS = 2000;
 
 struct DockFocus {
   Dock *widget;
@@ -1089,6 +1091,20 @@ void MainWindow::compileCSG()
     else return;
     try {
 #ifdef ENABLE_OPENCSG
+      // After a value edit, highlight the parts of the model that differ from
+      // the previous preview. The snapshot is taken on every compile, so the
+      // first edit after any preview already has something to compare with.
+      this->changeHighlightShown = false;
+      auto signatures = NodeDiff::signatures(*rootNode);
+      if (this->highlightNextPreview && viewActionHighlightChanges->isChecked() &&
+          !this->previousNodeSignatures.empty()) {
+        auto changed = NodeDiff::changedNodes(*rootNode, signatures, this->previousNodeSignatures);
+        this->changeHighlightShown = !changed.empty();
+        csgrenderer.setHighlightIndices(std::move(changed));
+      }
+      this->highlightNextPreview = false;
+      this->previousNodeSignatures = std::move(signatures);
+
       this->processEvents();
       this->csgRoot = csgrenderer.buildCSGTree(*rootNode);
 #endif
@@ -1892,7 +1908,44 @@ void MainWindow::prepareCompile(const char *afterCompileSlot, bool procevents, b
 
 void MainWindow::on_designActionPreview_triggered()
 {
+  this->highlightNextPreview = false;
   actionRenderPreview();
+}
+
+/*!
+   Preview after a value was edited in the Customizer or with the editor's
+   number shortcuts. Highlights the parts of the model that changed.
+ */
+void MainWindow::actionLiveEditPreview()
+{
+  this->highlightNextPreview = true;
+  actionRenderPreview();
+}
+
+/*!
+   Redraws the preview without the change highlight. The geometry is still in
+   the cache, so only the CSG products are rebuilt.
+ */
+void MainWindow::clearChangeHighlight()
+{
+  if (!this->changeHighlightShown || !this->rootNode) return;
+  if (GuiLocker::isLocked()) {
+    // Something else is running, try again later.
+    clearChangeHighlightTimer->start();
+    return;
+  }
+  GuiLocker::lock();
+  setCurrentOutput();
+  compileCSG();
+  selectPreviewViewMode();
+  compileEnded();
+}
+
+void MainWindow::on_viewActionHighlightChanges_toggled(bool checked)
+{
+  QSettingsCached settings;
+  settings.setValue("view/highlightChanges", checked);
+  if (!checked) clearChangeHighlight();
 }
 
 void MainWindow::actionRenderPreview()
@@ -1922,6 +1975,7 @@ void MainWindow::actionRenderPreview()
 void MainWindow::csgRender()
 {
   if (this->rootNode) compileCSG();
+  if (this->changeHighlightShown) clearChangeHighlightTimer->start();
 
   selectPreviewViewMode();
 
@@ -3530,6 +3584,13 @@ void MainWindow::setupCoreSubsystems()
   waitAfterReloadTimer->setSingleShot(true);
   waitAfterReloadTimer->setInterval(autoReloadPollingPeriodMS);
   connect(waitAfterReloadTimer, &QTimer::timeout, this, &MainWindow::waitAfterReload);
+
+  clearChangeHighlightTimer = new QTimer(this);
+  clearChangeHighlightTimer->setSingleShot(true);
+  clearChangeHighlightTimer->setInterval(changeHighlightDurationMS);
+  connect(clearChangeHighlightTimer, &QTimer::timeout, this, &MainWindow::clearChangeHighlight);
+  viewActionHighlightChanges->setChecked(
+    QSettingsCached().value("view/highlightChanges", true).toBool());
 
   consoleUpdater = new QTimer(this);
   consoleUpdater->setSingleShot(true);

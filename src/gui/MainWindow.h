@@ -54,6 +54,7 @@ class ThrownTogetherRenderer;
 class AIDock;
 
 #include "RenderStatistic.h"
+#include "core/NodeDiff.h"
 #include "core/Tree.h"
 #include "geometry/Geometry.h"
 #include "gui/Editor.h"
@@ -347,10 +348,13 @@ protected:
 
 public slots:
   void actionRenderPreview();
+  void actionLiveEditPreview();
   void on_designActionPreview_triggered();
 private slots:
   void csgRender();
   void csgReloadRender();
+  void clearChangeHighlight();
+  void on_viewActionHighlightChanges_toggled(bool checked);
   void on_designAction3DPrint_triggered();
   void sendToExternalTool(class ExternalToolInterface& externalToolService);
   void on_designActionRender_triggered();
@@ -457,6 +461,12 @@ private:
   std::shared_ptr<CSGProducts> highlightsProducts;
   std::shared_ptr<CSGProducts> backgroundProducts;
   int currentlySelectedObject{-1};
+
+  // Highlighting what a value edit changed (View > Highlight Changes)
+  NodeDiff::Signatures previousNodeSignatures;  // Subtrees of the last compiled CSG tree
+  bool highlightNextPreview{false};             // Next preview comes from a value edit
+  bool changeHighlightShown{false};
+  QTimer *clearChangeHighlightTimer;
 
   char const *afterCompileSlot;
   bool procevents{false};
